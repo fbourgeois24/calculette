@@ -136,7 +136,7 @@ body{position:fixed; inset:0; height:auto; box-sizing:border-box;
 
 <div class="calc">
   <div class="brand"><span class="name">CALCULETTE</span><span class="model">fx-FB</span></div>
-  <div class="sub">Collège 2D</div>
+  <div class="sub">Collège 2D <span style="font-size:10px;opacity:.55;font-weight:500">v3</span></div>
 
   <div class="lcd" aria-live="polite">
     <div class="status" id="status"></div>
@@ -1379,6 +1379,26 @@ window.__calc = { press, get lcd(){ return $scr.innerText; }, get S(){ return S;
 })();
 </script>
 
+
+<script>
+// iOS annonce parfois une hauteur trop petite pour les applis de l'écran d'accueil :
+// on utilise la hauteur réelle de l'écran.
+(function(){
+  var standalone = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (!standalone) return;
+  function fit(){
+    var portrait = window.innerHeight >= window.innerWidth;
+    var full = portrait ? Math.max(screen.height, screen.width) : Math.min(screen.height, screen.width);
+    var h = Math.max(full, window.innerHeight);
+    document.documentElement.style.height = h + 'px';
+    document.body.style.bottom = 'auto';
+    document.body.style.height = h + 'px';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', function(){ setTimeout(fit, 300); });
+})();
+</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
