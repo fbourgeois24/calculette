@@ -30,7 +30,7 @@ body{
   margin:0; background:var(--body); color:var(--label);
   font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
-  touch-action:manipulation; overflow:hidden;
+  touch-action:manipulation; overflow:hidden; -webkit-touch-callout:none;
 }
 .calc{
   height:100%; max-width:460px; margin:0 auto; box-sizing:border-box;
@@ -136,7 +136,7 @@ body{position:fixed; inset:0; height:auto; box-sizing:border-box;
 
 <div class="calc">
   <div class="brand"><span class="name">CALCULETTE</span><span class="model">fx-FB</span></div>
-  <div class="sub">Collège 2D <span style="font-size:10px;opacity:.55;font-weight:500">v3</span></div>
+  <div class="sub">Collège 2D <span style="font-size:10px;opacity:.55;font-weight:500">v4</span></div>
 
   <div class="lcd" aria-live="polite">
     <div class="status" id="status"></div>
@@ -333,7 +333,9 @@ try {
     fresh = false;
   }
 } catch (e) {}
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+let saveT = null;
+function save(){ clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }, 400); }
+window.addEventListener('pagehide', () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} });
 
 /* =========================================================
    État d'exécution
@@ -1350,7 +1352,24 @@ function press(k){
   render(); save();
 }
 
-document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => press(b.dataset.k)));
+// Réaction immédiate au toucher (pointerdown) : chaque appui compte, même très rapide ou à deux doigts.
+document.querySelectorAll('[data-k]').forEach(b => {
+  const up = () => b.classList.remove('down');
+  b.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    b.classList.add('down');
+    press(b.dataset.k);
+  });
+  b.addEventListener('pointerup', up);
+  b.addEventListener('pointercancel', up);
+  b.addEventListener('pointerleave', up);
+  // clavier (Entrée / Espace sur une touche sélectionnée) : seulement les clics sans pointeur
+  b.addEventListener('click', e => { if (e.detail === 0) press(b.dataset.k); });
+  b.addEventListener('contextmenu', e => e.preventDefault());
+});
+document.addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('[data-k]')) e.preventDefault(); }, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault());
 
 const map = { '*':'×', 'x':'×', '/':'÷', '-':'−', '+':'+', ',':'.', '.':'.', '(':'(', ')':')', '^':'pow', '%':'pct',
   'Enter':'exe', '=':'exe', 'Backspace':'del', 'Delete':'ac', 'Escape':'ac', 'Shift':'shift',
