@@ -17,7 +17,6 @@
 <style>
 :root{
   color-scheme: light;
-  padding: env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) max(calc(env(safe-area-inset-bottom,0px) - 14px),0px) env(safe-area-inset-left,0px);
   --body:#92d9c6; --body-edge:#6fbfaa; --bezel:#7ccbb6;
   --lcd:#b8c2a0; --lcd-ink:#1d2618;
   --lav:#7b82c6; --lav-hi:#9097d6; --lav-lo:#5a60a0;
@@ -124,6 +123,12 @@ button.k:focus-visible{outline:2px solid #fff; outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.cur{animation:none} button.k{transition:none}}
 @media (max-height:720px){.sub{display:none}}
 @media (max-height:600px){.brand{display:none}}
+
+/* Appli iPhone : occuper tout l'écran, quelle que soit la hauteur annoncée par iOS */
+html{height:auto}
+body{position:fixed; inset:0; height:auto; box-sizing:border-box;
+  padding: env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) max(calc(env(safe-area-inset-bottom,0px) - 16px),4px) env(safe-area-inset-left,0px);}
+.calc{height:100%}
 </style>
 </head>
 <body>
