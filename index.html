@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Calculette</title>
+<meta name="theme-color" content="#92d9c6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Calculette">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>*,*::before,*::after{box-sizing:border-box}</style>
+<style>
+:root{
+  color-scheme: light;
+  padding: env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+  --body:#92d9c6; --body-edge:#6fbfaa; --bezel:#7ccbb6;
+  --lcd:#b8c2a0; --lcd-ink:#1d2618;
+  --lav:#7b82c6; --lav-hi:#9097d6; --lav-lo:#5a60a0;
+  --dark:#23302c; --dark-hi:#34443f; --dark-lo:#141c19;
+  --red:#d8433a; --red-hi:#e7625a; --red-lo:#a22c25;
+  --shift:#c05f1e; --alpha:#c21d2b; --label:#2a3b36;
+}
+html{height:100%; box-sizing:border-box}
+body{height:100%}
+body{
+  margin:0; background:var(--body); color:var(--label);
+  font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation; overflow:hidden;
+}
+.calc{
+  height:100%; max-width:460px; margin:0 auto; box-sizing:border-box;
+  padding-inline:14px; padding-block:min(10px,1.2vh) min(12px,1.4vh);
+  display:flex; flex-direction:column; gap:min(10px,1.2vh);
+}
+.brand{display:flex; justify-content:space-between; align-items:baseline; padding-inline:6px}
+.brand .name{font-weight:700; font-size:20px; letter-spacing:.14em; color:#3d4d48}
+.brand .model{font-style:italic; font-weight:700; color:var(--alpha); font-size:17px}
+.sub{text-align:center; font-weight:600; color:#4b5d57; font-size:15px; margin-top:-8px; letter-spacing:.04em}
+
+/* ---------- écran ---------- */
+.lcd{
+  flex:0 0 auto; height:clamp(112px,23vh,200px); background:var(--lcd); border-radius:6px;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,.28), 0 0 0 6px var(--bezel), 0 0 0 7px var(--body-edge);
+  margin:6px 6px 4px; padding:6px 10px 8px; box-sizing:border-box;
+  display:flex; flex-direction:column; color:var(--lcd-ink); overflow:hidden;
+  font-family:"Azeret Mono",ui-monospace,Menlo,monospace;
+}
+.status{display:flex; gap:5px; font-size:10px; font-weight:500; height:13px; line-height:13px; flex:0 0 auto; white-space:nowrap}
+.status span{opacity:.1} .status span.on{opacity:1}
+.status .gap{flex:1; opacity:0}
+.scr{flex:1; display:flex; flex-direction:column; min-height:0; position:relative}
+.scr.off{visibility:hidden}
+.ex{font-size:clamp(17px,5.2vw,21px); line-height:1.25; white-space:nowrap; overflow:hidden; padding-block:3px; flex:0 0 auto}
+.ex.dim{opacity:.85}
+.pre{margin-right:.2em}
+.res{margin-top:auto; text-align:right; font-size:clamp(24px,8vw,33px); font-weight:500; white-space:nowrap; overflow:hidden; line-height:1.15; font-variant-numeric:tabular-nums}
+.res .two{display:flex; flex-direction:column; align-items:flex-end; font-size:.72em; gap:2px}
+.cur{display:inline-block; width:2px; height:1em; background:currentColor; vertical-align:-.14em; margin:0 -1px; animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.fr{display:inline-flex; flex-direction:column; align-items:stretch; vertical-align:middle; font-size:.84em; margin:0 .08em; line-height:1.12}
+.fr>span{text-align:center; padding:0 .12em}
+.fr>span:first-child{border-bottom:1.5px solid currentColor}
+.sq{display:inline-flex; align-items:flex-end}
+.sq .ra{border-top:1.5px solid currentColor; padding:0 .1em; margin-left:-.02em; line-height:1.1}
+sup{font-size:.62em; vertical-align:.72em; line-height:0}
+.ix{font-size:.55em; vertical-align:.95em; margin-right:-.25em; line-height:0}
+.slot{display:inline-block; min-width:.55em; height:.82em; border:1px dashed currentColor; vertical-align:-.08em; margin:0 1px; box-sizing:border-box; line-height:.82em}
+.slot .cur{height:.8em; vertical-align:top}
+.menu{display:grid; grid-template-columns:1fr 1fr; gap:3px 10px; font-size:clamp(13px,4vw,15px); padding-top:4px}
+.ttl{font-size:clamp(14px,4.3vw,17px); padding-top:4px}
+.lines{display:flex; flex-direction:column; gap:4px; font-size:clamp(13px,4vw,15px); padding-top:6px}
+.errbox{margin:auto; display:flex; flex-direction:column; gap:4px; font-size:clamp(13px,4vw,15px)}
+.errbox .et{font-size:clamp(17px,5.2vw,21px); font-weight:500; margin-bottom:4px}
+.tb{width:100%; border-collapse:collapse; table-layout:fixed; font-size:clamp(12px,3.8vw,14px); margin-top:2px}
+.tb th{font-weight:500; font-size:.85em; padding:0}
+.tb td{border:1px solid rgba(29,38,24,.55); padding:1px 4px; text-align:right; white-space:nowrap; overflow:hidden; height:1.25em}
+.tb td.rn{border:none; text-align:left; width:1.5em; padding-left:0; font-size:.85em}
+.tb td.sel{background:var(--lcd-ink); color:var(--lcd)}
+.foot{margin-top:auto; text-align:right; font-size:clamp(15px,4.6vw,19px); white-space:nowrap; overflow:hidden; min-height:1.3em}
+
+/* ---------- clavier ---------- */
+.keys{flex:1; display:flex; flex-direction:column; gap:min(8px,1vh); min-height:0}
+.fn{flex:6 1 0; min-height:0; display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:repeat(6,minmax(0,1fr)); column-gap:7px; row-gap:min(2px,.3vh)}
+.num{flex:5.2 1 0; min-height:0; display:grid; grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(4,minmax(0,1fr)); column-gap:10px; row-gap:min(4px,.5vh)}
+.cell{display:flex; flex-direction:column; align-items:stretch; justify-content:flex-end; min-width:0; min-height:0}
+.cell>button.k{flex:1 1 auto; min-height:0}
+.lbl{height:min(14px,1.7vh); flex:0 0 auto; display:flex; justify-content:space-between; font-size:min(11px,1.45vh); font-weight:600; line-height:min(14px,1.7vh); padding-inline:3px; white-space:nowrap}
+.lbl .s{color:var(--shift)} .lbl .a{color:var(--alpha); margin-left:auto}
+.lbl.c{justify-content:center}
+button.k{
+  font:inherit; border:0; margin:0; padding:0; cursor:pointer; color:#fff;
+  border-radius:9px/11px; display:flex; align-items:center; justify-content:center;
+  font-weight:700; transition:transform .05s, filter .05s;
+}
+button.k:active,button.k.down{transform:translateY(1px) scale(.97); filter:brightness(.88)}
+button.k:focus-visible{outline:2px solid #fff; outline-offset:2px}
+.lav{background:linear-gradient(var(--lav-hi),var(--lav) 55%,var(--lav-lo)); max-height:40px; font-size:clamp(12px,min(4.3vw,2.4vh),19px); box-shadow:0 2px 0 var(--lav-lo),0 3px 4px rgba(0,0,0,.25)}
+.drk{background:linear-gradient(var(--dark-hi),var(--dark) 50%,var(--dark-lo)); max-height:58px; font-size:clamp(17px,min(7.4vw,3.9vh),32px); border-radius:12px/15px; box-shadow:0 2px 0 #0b100e,0 4px 6px rgba(0,0,0,.3)}
+.drk.op{font-size:clamp(19px,min(8vw,4.2vh),34px)}
+.drk.sm{font-size:clamp(13px,min(5vw,2.7vh),22px)}
+.red{background:linear-gradient(var(--red-hi),var(--red) 50%,var(--red-lo)); max-height:58px; font-size:clamp(15px,min(6vw,3.2vh),26px); border-radius:12px/15px; box-shadow:0 2px 0 #7c1d18,0 4px 6px rgba(0,0,0,.3)}
+.cell>button.pill{flex:0 1 auto; height:100%; max-height:30px}
+.pill{background:linear-gradient(var(--dark-hi),var(--dark) 60%,var(--dark-lo)); border-radius:50%; box-shadow:0 2px 3px rgba(0,0,0,.3)}
+.keys sup{font-size:.6em; vertical-align:.6em}
+
+.pad{grid-column:3 / 5; grid-row:1 / 3; display:flex; align-items:center; justify-content:center}
+.ring{
+  position:relative; height:100%; max-height:108px; aspect-ratio:1; width:auto; max-width:100%; border-radius:50%;
+  background:radial-gradient(circle at 50% 40%, #56645f, #2c3834 70%); box-shadow:0 3px 6px rgba(0,0,0,.35), inset 0 0 0 3px #1c2522;
+}
+.ring button{position:absolute; background:transparent; border:0; color:#9fb0aa; font-size:11px; cursor:pointer; padding:0}
+.ring .u{top:0; left:28%; width:44%; height:32%}
+.ring .d{bottom:0; left:28%; width:44%; height:32%}
+.ring .l{left:0; top:28%; width:32%; height:44%}
+.ring .r{right:0; top:28%; width:32%; height:44%}
+.ring .mid{position:absolute; inset:30%; border-radius:50%; background:radial-gradient(circle at 50% 35%,#6a7874,#3a4743); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#9fb0aa; letter-spacing:.04em; pointer-events:none}
+.ring button:active,.ring button.down{color:#fff}
+@media (prefers-reduced-motion:reduce){.cur{animation:none} button.k{transition:none}}
+@media (max-height:720px){.sub{display:none}}
+@media (max-height:600px){.brand{display:none}}
+</style>
+</head>
+<body>
+
+
+<div class="calc">
+  <div class="brand"><span class="name">CALCULETTE</span><span class="model">fx-FB</span></div>
+  <div class="sub">Collège 2D</div>
+
+  <div class="lcd" aria-live="polite">
+    <div class="status" id="status"></div>
+    <div class="scr" id="scr"></div>
+  </div>
+
+  <div class="keys">
+    <div class="fn">
+      <div class="cell"><div class="lbl"><span class="s">SHIFT</span></div><button class="k pill" data-k="shift" aria-label="Shift"></button></div>
+      <div class="cell"><div class="lbl"><span class="a">ALPHA</span></div><button class="k pill" data-k="alpha" aria-label="Alpha"></button></div>
+      <div class="pad">
+        <div class="ring">
+          <button class="u" data-k="up" aria-label="Haut">▲</button>
+          <button class="d" data-k="down" aria-label="Bas">▼</button>
+          <button class="l" data-k="left" aria-label="Gauche">◀</button>
+          <button class="r" data-k="right" aria-label="Droite">▶</button>
+          <div class="mid">REPLAY</div>
+        </div>
+      </div>
+      <div class="cell"><div class="lbl c" style="font-size:10px;letter-spacing:-.02em"><span style="color:#2a3b36">MODE</span><span class="s">&nbsp;SETUP</span></div><button class="k pill" data-k="mode" aria-label="Mode"></button></div>
+      <div class="cell"><div class="lbl c"><span style="color:#2a3b36">ON</span></div><button class="k pill" data-k="on" aria-label="On"></button></div>
+
+      <div class="cell"><div class="lbl"><span class="s">Abs</span></div><button class="k lav" data-k="pct">%</button></div>
+      <div class="cell"><div class="lbl"><span class="s">√■</span></div><button class="k lav" data-k="sq"><i>x</i><sup>2</sup></button></div>
+      <div class="cell"><div class="lbl"><span class="s">∛■</span></div><button class="k lav" data-k="cube"><i>x</i><sup>3</sup></button></div>
+      <div class="cell"><div class="lbl"><span class="s">ⁿ√■</span></div><button class="k lav" data-k="pow"><i>x</i><sup>■</sup></button></div>
+
+      <div class="cell"><div class="lbl"></div><button class="k lav" data-k="calc">CALC</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k lav" data-k="Y">Y</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">:</span></div><button class="k lav" data-k="eq">=</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k lav" data-k="X">X</button></div>
+      <div class="cell"><div class="lbl"><span class="s">10<sup>■</sup></span></div><button class="k lav" data-k="log">log</button></div>
+      <div class="cell"><div class="lbl"><span class="s">e<sup>■</sup></span></div><button class="k lav" data-k="ln">ln</button></div>
+
+      <div class="cell"><div class="lbl"><span class="a">A</span></div><button class="k lav" data-k="neg">(−)</button></div>
+      <div class="cell"><div class="lbl"><span class="a">B</span></div><button class="k lav" data-k="divr">÷R</button></div>
+      <div class="cell"><div class="lbl"><span class="a">C</span></div><button class="k lav" data-k="frac">▭⁄▭</button></div>
+      <div class="cell"><div class="lbl"><span class="s">Asn</span><span class="a">D</span></div><button class="k lav" data-k="sin">sin</button></div>
+      <div class="cell"><div class="lbl"><span class="s">Acs</span><span class="a">E</span></div><button class="k lav" data-k="cos">cos</button></div>
+      <div class="cell"><div class="lbl"><span class="s">Atn</span><span class="a">F</span></div><button class="k lav" data-k="tan">tan</button></div>
+
+      <div class="cell"><div class="lbl"><span class="s">STO</span></div><button class="k lav" data-k="rcl">RCL</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">←</span></div><button class="k lav" data-k="dms">°′″</button></div>
+      <div class="cell"><div class="lbl c"><span class="s"><i>x</i>⁻¹</span></div><button class="k lav" data-k="(">(</button></div>
+      <div class="cell"><div class="lbl c"><span class="s"><i>x</i>!</span></div><button class="k lav" data-k=")">)</button></div>
+      <div class="cell"><div class="lbl"><span class="s">a+ᵇ⁄꜀⇔ᵈ⁄꜀</span></div><button class="k lav" data-k="sd">S⇔D</button></div>
+      <div class="cell"><div class="lbl"><span class="s">M−</span><span class="a">M</span></div><button class="k lav" data-k="mplus">M+</button></div>
+    </div>
+
+    <div class="num">
+      <div class="cell"><div class="lbl"></div><button class="k drk" data-k="7">7</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k drk" data-k="8">8</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">CLR</span></div><button class="k drk" data-k="9">9</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">INS</span></div><button class="k red" data-k="del">DEL</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">OFF</span></div><button class="k red" data-k="ac">AC</button></div>
+
+      <div class="cell"><div class="lbl"></div><button class="k drk" data-k="4">4</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k drk" data-k="5">5</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k drk" data-k="6">6</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k drk op" data-k="×">×</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k drk op" data-k="÷">÷</button></div>
+
+      <div class="cell"><div class="lbl"><span class="s">STAT</span></div><button class="k drk" data-k="1">1</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k drk" data-k="2">2</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">,</span></div><button class="k drk" data-k="3">3</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">Pol</span></div><button class="k drk op" data-k="+">+</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">Rec</span></div><button class="k drk op" data-k="−">−</button></div>
+
+      <div class="cell"><div class="lbl"><span class="s">Rnd</span></div><button class="k drk" data-k="0">0</button></div>
+      <div class="cell"><div class="lbl"><span class="s">Ran#</span></div><button class="k drk" data-k=".">•</button></div>
+      <div class="cell"><div class="lbl c"><span class="s">π</span></div><button class="k drk sm" data-k="E">×10<sup><i>x</i></sup></button></div>
+      <div class="cell"><div class="lbl c"><span class="s">DRG▸</span></div><button class="k drk sm" data-k="Ans">Ans</button></div>
+      <div class="cell"><div class="lbl"></div><button class="k drk sm" data-k="exe">EXE</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $scr = document.getElementById('scr');
+const $status = document.getElementById('status');
+
+/* =========================================================
+   Erreurs
+   ========================================================= */
+class CErr extends Error { constructor(k){ super(k); this.k = k; } }
+const SYN = () => { throw new CErr('Syntax'); };
+const MATH = () => { throw new CErr('Math'); };
+const ERRMSG = { Syntax:'Syntax ERROR', Math:'Math ERROR', Mem:'Insufficient MEM' };
+
+/* =========================================================
+   Gabarits (affichage naturel)
+   ========================================================= */
+const isT = x => x !== null && typeof x === 'object' && !!x.t;
+const SLOTS = { frac:2, sqrt:1, cbrt:1, nroot:2, pow:1, p10:1, pe:1, e10:1, abs:1 };
+const T = t => ({ t, s: Array.from({length: SLOTS[t]}, () => []) });
+const clone = x => JSON.parse(JSON.stringify(x));
+
+class Editor {
+  constructor(root){ this.root = root || []; this.path = []; this.i = this.root.length; }
+  clear(){ this.root = []; this.path = []; this.i = 0; }
+  empty(){ return this.root.length === 0; }
+  list(){ let l = this.root; for (const [t, s] of this.path) l = t.s[s]; return l; }
+  end(){ this.path = []; this.i = this.root.length; }
+  start(){ this.path = []; this.i = 0; }
+  insert(it, slot = 0){
+    const l = this.list();
+    l.splice(this.i, 0, it);
+    if (isT(it)) { this.path.push([it, slot]); this.i = it.s[slot].length; }
+    else this.i++;
+  }
+  left(){
+    const l = this.list();
+    if (this.i > 0) {
+      const it = l[this.i - 1];
+      if (isT(it)) { const s = it.s.length - 1; this.path.push([it, s]); this.i = it.s[s].length; }
+      else this.i--;
+      return;
+    }
+    if (this.path.length) {
+      const top = this.path[this.path.length - 1];
+      const [t, s] = top;
+      if (s > 0) { top[1] = s - 1; this.i = t.s[s - 1].length; }
+      else { this.path.pop(); this.i = this.list().indexOf(t); }
+      return;
+    }
+    this.i = l.length;
+  }
+  right(){
+    const l = this.list();
+    if (this.i < l.length) {
+      const it = l[this.i];
+      if (isT(it)) { this.path.push([it, 0]); this.i = 0; }
+      else this.i++;
+      return;
+    }
+    if (this.path.length) {
+      const top = this.path[this.path.length - 1];
+      const [t, s] = top;
+      if (s < t.s.length - 1) { top[1] = s + 1; this.i = 0; }
+      else { this.path.pop(); this.i = this.list().indexOf(t) + 1; }
+      return;
+    }
+    this.i = 0;
+  }
+  vert(dir){
+    for (let k = this.path.length - 1; k >= 0; k--) {
+      const [t, s] = this.path[k];
+      if (t.t === 'frac') {
+        const ns = dir < 0 ? 0 : 1;
+        if (ns !== s) { this.path = this.path.slice(0, k); this.path.push([t, ns]); this.i = t.s[ns].length; return true; }
+      }
+    }
+    return false;
+  }
+  del(){
+    const l = this.list();
+    if (this.i > 0) {
+      const it = l[this.i - 1];
+      if (isT(it)) {
+        if (it.s.every(x => !x.length)) { l.splice(this.i - 1, 1); this.i--; }
+        else { const s = it.s.length - 1; this.path.push([it, s]); this.i = it.s[s].length; this.del(); }
+      } else { l.splice(this.i - 1, 1); this.i--; }
+      return;
+    }
+    if (this.path.length) {
+      const [t, s] = this.path.pop();
+      const pl = this.list();
+      const idx = pl.indexOf(t);
+      let before = 0; const flat = [];
+      t.s.forEach((sl, k) => { if (k < s) before += sl.length; flat.push(...sl); });
+      pl.splice(idx, 1, ...flat);
+      this.i = idx + before;
+    }
+  }
+}
+
+/* =========================================================
+   État persistant
+   ========================================================= */
+const DEF_SETUP = () => ({ io:'M', unit:'D', disp:'norm', fix:0, sci:10, norm:1, frac:'d/c', freq:false });
+const DEF_VARS = () => ({ A:0, B:0, C:0, D:0, E:0, F:0, X:0, Y:0, M:0 });
+let S = { setup: DEF_SETUP(), vars: DEF_VARS(), ans: 0, mode: 'COMP', stat: [], table: { f: null, start: 1, end: 5, step: 1 }, hist: [] };
+const KEY = 'calculette-fx-fb-v2';
+let fresh = true;
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) {
+    const o = JSON.parse(raw);
+    S = Object.assign(S, o);
+    S.setup = Object.assign(DEF_SETUP(), o.setup);
+    S.vars = Object.assign(DEF_VARS(), o.vars);
+    fresh = false;
+  }
+} catch (e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* =========================================================
+   État d'exécution
+   ========================================================= */
+let screen = 'comp';
+let shift = false, alpha = false, pending = null;
+let main = new Editor();
+let done = false, result = null, view = 'std', mixedT = false, suffix = '';
+let histIdx = -1, multi = null, fromCalc = false;
+let calcSt = null, err = null, menu = null, menuBack = 'comp';
+let cellEd = new Editor(), statCur = { r: 0, c: 0, top: 0 };
+let tableEd = new Editor(), askEd = new Editor(), askK = 0;
+let tRows = [], tSel = 0, tCol = 1, tTop = 0;
+
+/* =========================================================
+   Moteur de calcul
+   ========================================================= */
+const VARS = 'ABCDEFXYM';
+const isVar = t => typeof t === 'string' && t.length === 1 && VARS.includes(t);
+const FUNCS = ['sin(','cos(','tan(','sin⁻¹(','cos⁻¹(','tan⁻¹(','log(','ln(','Pol(','Rec(','Rnd('];
+const STATV = ['n','x̄','σx','sx','Σx','Σx²','minX','maxX','Q1','Med','Q3'];
+const CONSTS = ['Ans','π','Ran#'];
+
+const chk = v => { if (typeof v !== 'number' || !isFinite(v) || Math.abs(v) >= 1e100) MATH(); return v; };
+
+function lex(list){
+  const out = []; let buf = '';
+  for (const it of list) {
+    if (typeof it === 'string' && /^[0-9.]$/.test(it)) { buf += it; continue; }
+    if (buf) { out.push({ num: buf }); buf = ''; }
+    out.push(it);
+  }
+  if (buf) out.push({ num: buf });
+  return out;
+}
+
+function startsPrim(t){
+  if (t === undefined) return false;
+  if (t.num !== undefined) return true;
+  if (isT(t)) return t.t !== 'pow';
+  return isVar(t) || CONSTS.includes(t) || STATV.includes(t) || t === '(' || FUNCS.includes(t);
+}
+
+function mkCtx(vars){ return { vars: vars || S.vars, ans: S.ans, unit: S.setup.unit, usedPi: false, usedDec: false, special: null }; }
+
+function evalList(list, c){
+  const tk = lex(list);
+  if (!tk.length) SYN();
+  const P = new Parser(tk, c);
+  const v = P.sum();
+  if (P.p < tk.length) SYN();
+  return chk(v);
+}
+
+class Parser {
+  constructor(tk, c){ this.tk = tk; this.p = 0; this.c = c; }
+  peek(){ return this.tk[this.p]; }
+  sum(){
+    let v = this.mul();
+    for (;;) {
+      const t = this.peek();
+      if (t === '+') { this.p++; v = chk(v + this.mul()); }
+      else if (t === '−') { this.p++; v = chk(v - this.mul()); }
+      else return v;
+    }
+  }
+  mul(){
+    let v = this.imp();
+    for (;;) {
+      const t = this.peek();
+      if (t === '×') { this.p++; v = chk(v * this.imp()); }
+      else if (t === '÷') { this.p++; const d = this.imp(); if (d === 0) MATH(); v = chk(v / d); }
+      else return v;
+    }
+  }
+  imp(){
+    let v = this.neg();
+    while (startsPrim(this.peek())) v = chk(v * this.neg());
+    return v;
+  }
+  neg(){
+    if (this.peek() === 'neg') { this.p++; return -this.neg(); }
+    return this.post();
+  }
+  post(){
+    let v = this.prim();
+    for (;;) {
+      const t = this.peek();
+      if (t === '²') v = v * v;
+      else if (t === '³') v = v * v * v;
+      else if (t === '⁻¹') { if (v === 0) MATH(); v = 1 / v; }
+      else if (t === '!') v = fact(v);
+      else if (t === '%') v = v / 100;
+      else if (t === 'deg' || t === 'rad' || t === 'grad') v = angConv(v, t, this.c);
+      else if (t === 'dms') { this.c.usedDec = true; }
+      else if (isT(t) && t.t === 'pow') v = power(v, evalList(t.s[0], this.c));
+      else if (isT(t) && t.t === 'e10') v = v * p10(evalList(t.s[0], this.c));
+      else return chk(v);
+      this.p++; v = chk(v);
+    }
+  }
+  close(){ if (this.peek() === ')') this.p++; else if (this.p < this.tk.length) SYN(); }
+  prim(){
+    const t = this.tk[this.p++]; const c = this.c;
+    if (t === undefined) SYN();
+    if (t.num !== undefined) {
+      const s = t.num;
+      if (s === '.' || (s.match(/\./g) || []).length > 1) SYN();
+      if (s.includes('.')) c.usedDec = true;
+      let v = parseFloat(s);
+      if (this.peek() === 'dms') {
+        this.p++; c.usedDec = true;
+        for (const div of [60, 3600]) {
+          const n = this.tk[this.p];
+          if (n && n.num !== undefined && this.tk[this.p + 1] === 'dms') { v += parseFloat(n.num) / div; this.p += 2; }
+          else break;
+        }
+      }
+      return v;
+    }
+    if (typeof t === 'string') {
+      if (isVar(t)) return c.vars[t];
+      if (t === 'Ans') return c.ans;
+      if (t === 'π') { c.usedPi = true; return Math.PI; }
+      if (t === 'Ran#') { c.usedDec = true; return Math.floor(Math.random() * 1000) / 1000; }
+      if (STATV.includes(t)) return statVal(t);
+      if (t === '(') { const v = this.sum(); this.close(); return v; }
+      if (FUNCS.includes(t)) {
+        const args = [this.sum()];
+        while (this.peek() === ',') { this.p++; args.push(this.sum()); }
+        this.close();
+        return applyF(t, args, c);
+      }
+      SYN();
+    }
+    if (isT(t)) return evalT(t, c);
+    SYN();
+  }
+}
+
+function p10(e){ return Number.isInteger(e) ? Number('1e' + e) : Math.pow(10, e); }
+
+function fact(v){
+  if (!Number.isInteger(v) || v < 0 || v > 69) MATH();
+  let r = 1; for (let i = 2; i <= v; i++) r *= i; return r;
+}
+
+function fracApprox(x, maxDen){
+  const sg = x < 0 ? -1 : 1; x = Math.abs(x);
+  let h0 = 0, h1 = 1, k0 = 1, k1 = 0, y = x;
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(y);
+    const h2 = a * h1 + h0, k2 = a * k1 + k0;
+    if (k2 > maxDen) break;
+    h0 = h1; h1 = h2; k0 = k1; k1 = k2;
+    if (Math.abs(x - h1 / k1) <= 1e-12 * Math.max(x, 1e-300)) return [sg * h1, k1];
+    const f = y - a; if (f < 1e-15) break; y = 1 / f;
+  }
+  if (k1 && Math.abs(x - h1 / k1) <= 1e-12 * Math.max(x, 1e-300)) return [sg * h1, k1];
+  return null;
+}
+
+function power(a, b){
+  if (a === 0) { if (b <= 0) MATH(); return 0; }
+  if (a < 0 && !Number.isInteger(b)) {
+    const f = fracApprox(b, 100);
+    if (!f || f[1] % 2 === 0) MATH();
+    const r = Math.pow(-a, b);
+    return Math.abs(f[0]) % 2 ? -r : r;
+  }
+  return Math.pow(a, b);
+}
+
+function nroot(n, x){
+  if (n === 0) MATH();
+  if (x < 0) {
+    if (Number.isInteger(n) && Math.abs(n) % 2 === 1) return -Math.pow(-x, 1 / n);
+    MATH();
+  }
+  const r = Math.pow(x, 1 / n);
+  const rr = Math.round(r);
+  return Math.abs(Math.pow(rr, n) - x) < 1e-9 * Math.max(1, Math.abs(x)) ? rr : r;
+}
+
+function toRad(x, u){ return u === 'D' ? x * Math.PI / 180 : u === 'R' ? x : x * Math.PI / 200; }
+function fromRad(r, c){ if (c.unit === 'R') c.usedPi = true; return c.unit === 'D' ? r * 180 / Math.PI : c.unit === 'R' ? r : r * 200 / Math.PI; }
+
+function trig(f, x, u){
+  const deg = u === 'D' ? x : u === 'G' ? x * 0.9 : null;
+  if (deg !== null && Math.abs(deg) < 1e12) {
+    const m = ((deg % 360) + 360) % 360;
+    if (f === 'sin') { if (m === 0 || m === 180) return 0; if (m === 90) return 1; if (m === 270) return -1; if (m === 30 || m === 150) return .5; if (m === 210 || m === 330) return -.5; }
+    if (f === 'cos') { if (m === 90 || m === 270) return 0; if (m === 0) return 1; if (m === 180) return -1; if (m === 60 || m === 300) return .5; if (m === 120 || m === 240) return -.5; }
+    if (f === 'tan') { if (m === 0 || m === 180) return 0; if (m === 90 || m === 270) MATH(); if (m === 45 || m === 225) return 1; if (m === 135 || m === 315) return -1; }
+  }
+  const r = toRad(x, u);
+  let v = Math[f](r);
+  if (f === 'tan' && Math.abs(v) > 1e15) MATH();
+  if (Math.abs(v) < 1e-13) v = 0;
+  return v;
+}
+
+function angConv(v, from, c){
+  const deg = from === 'deg' ? v : from === 'rad' ? v * 180 / Math.PI : v * 0.9;
+  if (c.unit === 'D') return deg;
+  if (c.unit === 'R') { c.usedPi = true; return deg * Math.PI / 180; }
+  return deg / 0.9;
+}
+
+function roundDisp(x){
+  const st = S.setup;
+  if (st.disp === 'fix') return +x.toFixed(st.fix);
+  if (st.disp === 'sci') return +x.toPrecision(st.sci);
+  return +x.toPrecision(10);
+}
+
+function applyF(f, a, c){
+  const one = () => { if (a.length !== 1) SYN(); return a[0]; };
+  switch (f) {
+    case 'sin(': return trig('sin', one(), c.unit);
+    case 'cos(': return trig('cos', one(), c.unit);
+    case 'tan(': return trig('tan', one(), c.unit);
+    case 'sin⁻¹(': { const x = one(); if (x < -1 || x > 1) MATH(); return fromRad(Math.asin(x), c); }
+    case 'cos⁻¹(': { const x = one(); if (x < -1 || x > 1) MATH(); return fromRad(Math.acos(x), c); }
+    case 'tan⁻¹(': return fromRad(Math.atan(one()), c);
+    case 'log(': {
+      if (a.length === 1) { if (a[0] <= 0) MATH(); const r = Math.log10(a[0]); return Math.abs(r - Math.round(r)) < 1e-14 ? Math.round(r) : r; }
+      if (a.length === 2) { const [b, x] = a; if (b <= 0 || b === 1 || x <= 0) MATH(); const r = Math.log(x) / Math.log(b); return Math.abs(r - Math.round(r)) < 1e-13 ? Math.round(r) : r; }
+      SYN();
+    }
+    case 'ln(': { const x = one(); if (x <= 0) MATH(); return Math.log(x); }
+    case 'Rnd(': return roundDisp(one());
+    case 'Pol(': {
+      if (a.length !== 2) SYN();
+      const [x, y] = a; if (x === 0 && y === 0) MATH();
+      const r = Math.hypot(x, y), th = fromRad(Math.atan2(y, x), c);
+      c.special = { t: 'pol', a: r, b: th }; c.vars.X = r; c.vars.Y = th; return r;
+    }
+    case 'Rec(': {
+      if (a.length !== 2) SYN();
+      const [r, th] = a;
+      const x = r * trig('cos', th, c.unit), y = r * trig('sin', th, c.unit);
+      c.special = { t: 'rec', a: x, b: y }; c.vars.X = x; c.vars.Y = y; return x;
+    }
+  }
+  SYN();
+}
+
+function evalT(t, c){
+  const ev = k => evalList(t.s[k], c);
+  switch (t.t) {
+    case 'frac': { const n = ev(0), d = ev(1); if (d === 0) MATH(); return n / d; }
+    case 'sqrt': { const x = ev(0); if (x < 0) MATH(); return Math.sqrt(x); }
+    case 'cbrt': return Math.cbrt(ev(0));
+    case 'nroot': return nroot(ev(0), ev(1));
+    case 'abs': return Math.abs(ev(0));
+    case 'p10': return p10(ev(0));
+    case 'pe': return Math.exp(ev(0));
+    case 'e10': return p10(ev(0));
+  }
+  SYN();
+}
+
+/* ---------- statistiques ---------- */
+function statData(){
+  const xs = []; let n = 0, sx = 0, sx2 = 0;
+  for (const row of S.stat) {
+    const f = S.setup.freq ? row.f : 1;
+    if (f < 0) MATH();
+    n += f; sx += f * row.x; sx2 += f * row.x * row.x;
+    if (f > 0) xs.push([row.x, f]);
+  }
+  return { xs, n, sx, sx2 };
+}
+function median(arr){ const m = arr.length; if (!m) MATH(); return m % 2 ? arr[(m - 1) / 2] : (arr[m / 2 - 1] + arr[m / 2]) / 2; }
+function statVal(t){
+  const d = statData();
+  if (d.n <= 0) MATH();
+  const mean = d.sx / d.n;
+  switch (t) {
+    case 'n': return d.n;
+    case 'Σx': return d.sx;
+    case 'Σx²': return d.sx2;
+    case 'x̄': return mean;
+    case 'σx': return Math.sqrt(Math.max(0, d.sx2 / d.n - mean * mean));
+    case 'sx': if (d.n < 2) MATH(); return Math.sqrt(Math.max(0, (d.sx2 - d.n * mean * mean) / (d.n - 1)));
+    case 'minX': return Math.min(...d.xs.map(p => p[0]));
+    case 'maxX': return Math.max(...d.xs.map(p => p[0]));
+  }
+  const all = [];
+  for (const [x, f] of d.xs) { if (!Number.isInteger(f)) MATH(); for (let i = 0; i < f; i++) all.push(x); if (all.length > 5000) MATH(); }
+  all.sort((p, q) => p - q);
+  const h = Math.floor(all.length / 2);
+  if (t === 'Med') return median(all);
+  if (all.length === 1) return all[0];
+  if (t === 'Q1') return median(all.slice(0, h));
+  if (t === 'Q3') return median(all.slice(all.length - h));
+  SYN();
+}
+
+/* ---------- instructions ---------- */
+function splitStmts(root){
+  const out = [[]];
+  for (const it of root) { if (it === ':') out.push([]); else out[out.length - 1].push(it); }
+  return out;
+}
+function evalStmt(list, c){
+  const eq = list.indexOf('=');
+  if (eq >= 0) {
+    if (eq !== 1 || !isVar(list[0]) || list.indexOf('=', eq + 1) >= 0) SYN();
+    const v = evalList(list.slice(2), c);
+    c.vars[list[0]] = v;
+    return { v };
+  }
+  const dr = list.indexOf('divR');
+  if (dr >= 0) {
+    if (list.indexOf('divR', dr + 1) >= 0) SYN();
+    const a = evalList(list.slice(0, dr), c), b = evalList(list.slice(dr + 1), c);
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b <= 0) MATH();
+    const q = Math.floor(a / b);
+    return { v: q, t: 'divR', a: q, b: a - q * b };
+  }
+  const v = evalList(list, c);
+  if (c.special && (list[0] === 'Pol(' || list[0] === 'Rec(')) return { v, t: c.special.t, a: c.special.a, b: c.special.b };
+  return { v };
+}
+
+/* =========================================================
+   Formatage des résultats
+   ========================================================= */
+const esc = s => String(s).replace(/[&<>]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[ch]));
+const mn = s => String(s).replace(/-/g, '−');
+function plain(str){
+  if (!/e/.test(str)) return str;
+  let [m, e] = str.split('e'); e = +e;
+  const neg = m[0] === '-'; if (neg) m = m.slice(1);
+  const [ip, fp = ''] = m.split('.');
+  const digits = ip + fp; const point = ip.length + e;
+  let out;
+  if (point <= 0) out = '0.' + '0'.repeat(-point) + digits;
+  else if (point >= digits.length) out = digits + '0'.repeat(point - digits.length);
+  else out = digits.slice(0, point) + '.' + digits.slice(point);
+  return (neg ? '-' : '') + out;
+}
+const trim0 = s => s.includes('.') ? s.replace(/\.?0+$/, '') : s;
+
+function fmtDec(v){
+  const st = S.setup; const ax = Math.abs(v);
+  if (st.disp === 'sci') { const [m, e] = v.toExponential(st.sci - 1).split('e'); return { m, e: +e }; }
+  if (st.disp === 'fix') {
+    if (ax >= 1e10) { const [m, e] = v.toExponential(9).split('e'); return { m: trim0(m), e: +e }; }
+    let s = v.toFixed(st.fix); if (/^-0(\.0*)?$/.test(s)) s = s.slice(1);
+    return { m: s };
+  }
+  if (v === 0) return { m: '0' };
+  const r = +v.toPrecision(10), ar = Math.abs(r);
+  const small = st.norm === 1 ? 1e-2 : 1e-9;
+  if (ar >= 1e10 || ar < small) { const [m, e] = r.toExponential(9).split('e'); return { m: trim0(m), e: +e }; }
+  return { m: trim0(plain(r.toPrecision(10))) };
+}
+function decHTML(v){
+  const { m, e } = fmtDec(v);
+  return esc(mn(m)) + (e !== undefined ? '×10<sup>' + mn(e) + '</sup>' : '');
+}
+function short(v){
+  if (v === null || v === undefined) return 'ERROR';
+  if (v === 0) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e6 || a < 1e-3) { const [m, e] = v.toExponential(2).split('e'); return mn(trim0(m) + 'ᴇ' + (+e)); }
+  return mn(trim0(plain(v.toPrecision(6))));
+}
+
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a; };
+const ndig = n => String(Math.abs(n)).length;
+function exactForm(v, usedPi){
+  if (!isFinite(v) || Number.isInteger(v) || v === 0) return null;
+  const neg = v < 0, x = Math.abs(v);
+  const f = fracApprox(x, 1e10);
+  if (f && f[1] > 1 && ndig(f[0]) + ndig(f[1]) <= 10) return { k: 'frac', neg, n: f[0], d: f[1] };
+  const q = fracApprox(x * x, 10000);
+  if (q && q[0] <= 1e6) {
+    let N = q[0] * q[1], s = 1;
+    if (N <= 1e8) {
+      for (let i = 2; i * i <= N; i++) while (N % (i * i) === 0) { N /= i * i; s *= i; }
+      let a = s, c = q[1]; const g = gcd(a, c); a /= g; c /= g;
+      if (N > 1 && a < 100 && N < 1000 && c < 100 && Math.abs(a * Math.sqrt(N) / c - x) <= 1e-12 * x) return { k: 'surd', neg, a, b: N, c };
+    }
+  }
+  if (usedPi) {
+    const p = fracApprox(x / Math.PI, 1000);
+    if (p && p[0] < 1000) return { k: 'pi', neg, a: p[0], c: p[1] };
+  }
+  return null;
+}
+const FR = (n, d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+function exactHTML(e, mixed){
+  const sg = e.neg ? '−' : '';
+  const lin = S.setup.io === 'L';
+  if (e.k === 'frac') {
+    if (mixed && e.n > e.d) {
+      const w = Math.floor(e.n / e.d), r = e.n % e.d;
+      return lin ? `${sg}${w}⌟${r}⌟${e.d}` : `${sg}${w}${FR(r, e.d)}`;
+    }
+    return lin ? `${sg}${e.n}⌟${e.d}` : sg + FR(e.n, e.d);
+  }
+  if (e.k === 'surd') {
+    const top = lin ? `${e.a > 1 ? e.a : ''}√(${e.b})` : `${e.a > 1 ? e.a : ''}<span class="sq"><span>√</span><span class="ra">${e.b}</span></span>`;
+    if (e.c === 1) return sg + top;
+    return lin ? `${sg}${top}⌟${e.c}` : sg + FR(top, e.c);
+  }
+  const top = `${e.a > 1 ? e.a : ''}π`;
+  if (e.c === 1) return sg + top;
+  return lin ? `${sg}${top}⌟${e.c}` : sg + FR(top, e.c);
+}
+function dmsHTML(v){
+  const neg = v < 0; let x = Math.abs(v);
+  let d = Math.floor(x), m = Math.floor((x - d) * 60), s = ((x - d) * 60 - m) * 60;
+  s = Math.round(s * 100) / 100;
+  if (s >= 60) { s -= 60; m++; } if (m >= 60) { m -= 60; d++; }
+  return `${neg ? '−' : ''}${d}°${m}′${trim0(s.toFixed(2))}″`;
+}
+function numHTML(v, r){
+  const math = S.setup.io === 'M';
+  const alt = view === 'alt';
+  const wantExact = math ? (r.usedDec ? alt : !alt) : alt;
+  if (wantExact) {
+    const e = exactForm(v, r.usedPi);
+    if (e) return exactHTML(e, (S.setup.frac === 'ab/c') !== mixedT);
+  }
+  return decHTML(v);
+}
+function resultHTML(r){
+  if (!r) return '';
+  if (r.t === 'divR') return `<div class="two"><span>Q=${decHTML(r.a)}</span><span>R=${decHTML(r.b)}</span></div>`;
+  if (r.t === 'pol') return `<div class="two"><span>r=${numHTML(r.a, r)}</span><span>θ=${numHTML(r.b, r)}</span></div>`;
+  if (r.t === 'rec') return `<div class="two"><span>X=${numHTML(r.a, r)}</span><span>Y=${numHTML(r.b, r)}</span></div>`;
+  if (view === 'dms') return dmsHTML(r.v);
+  return numHTML(r.v, r);
+}
+
+/* =========================================================
+   Rendu de l'expression
+   ========================================================= */
+const DISP = { neg:'−', divR:'÷R', deg:'°', rad:'ʳ', grad:'ᵍ', dms:'°' };
+const CUR = '<span class="cur"></span>';
+function edHTML(ed, showCur){
+  const lin = S.setup.io === 'L';
+  const cl = showCur ? ed.list() : null, ci = ed.i;
+  const L = (list, isRoot) => {
+    const n = list.length;
+    if (!n) {
+      if (isRoot) return list === cl ? CUR : '';
+      return `<span class="slot">${list === cl ? CUR : ''}</span>`;
+    }
+    let h = '';
+    for (let k = 0; k < n; k++) { if (list === cl && k === ci) h += CUR; h += item(list[k]); }
+    if (list === cl && ci === n) h += CUR;
+    return h;
+  };
+  const item = it => {
+    if (typeof it === 'string') return esc(DISP[it] ?? it);
+    const s = it.s;
+    if (lin) {
+      switch (it.t) {
+        case 'frac': return L(s[0]) + '⌟' + L(s[1]);
+        case 'sqrt': return '√(' + L(s[0]) + ')';
+        case 'cbrt': return '³√(' + L(s[0]) + ')';
+        case 'nroot': return L(s[0]) + '√(' + L(s[1]) + ')';
+        case 'pow': return '^(' + L(s[0]) + ')';
+        case 'p10': return '10^(' + L(s[0]) + ')';
+        case 'pe': return 'e^(' + L(s[0]) + ')';
+        case 'e10': return 'ᴇ' + L(s[0]);
+        case 'abs': return 'Abs(' + L(s[0]) + ')';
+      }
+    }
+    switch (it.t) {
+      case 'frac': return FR(L(s[0]), L(s[1]));
+      case 'sqrt': return `<span class="sq"><span>√</span><span class="ra">${L(s[0])}</span></span>`;
+      case 'cbrt': return `<span class="ix">3</span><span class="sq"><span>√</span><span class="ra">${L(s[0])}</span></span>`;
+      case 'nroot': return `<span class="ix">${L(s[0])}</span><span class="sq"><span>√</span><span class="ra">${L(s[1])}</span></span>`;
+      case 'pow': return `<sup>${L(s[0])}</sup>`;
+      case 'p10': return `10<sup>${L(s[0])}</sup>`;
+      case 'pe': return `e<sup>${L(s[0])}</sup>`;
+      case 'e10': return `×10<sup>${L(s[0])}</sup>`;
+      case 'abs': return `|${L(s[0])}|`;
+    }
+    return '';
+  };
+  return L(ed.root, true);
+}
+
+/* =========================================================
+   Écrans
+   ========================================================= */
+function statusHTML(){
+  if (screen === 'off') return '';
+  const st = S.setup;
+  const up = canUp(), down = canDown();
+  const disp = screen === 'comp' && done && multi && multi.k < multi.stmts.length - 1;
+  const items = [
+    ['S', shift], ['A', alpha], ['M', S.vars.M !== 0], ['STO', pending === 'sto'], ['RCL', pending === 'rcl'],
+    ['STAT', S.mode === 'STAT'], ['D', st.unit === 'D'], ['R', st.unit === 'R'], ['G', st.unit === 'G'],
+    ['FIX', st.disp === 'fix'], ['SCI', st.disp === 'sci'], ['Math', st.io === 'M'], ['gap', false],
+    ['▲', up], ['▼', down], ['Disp', disp]
+  ];
+  return items.map(([n, on]) => n === 'gap' ? '<span class="gap"></span>' : `<span class="${on ? 'on' : ''}">${n}</span>`).join('');
+}
+function canUp(){
+  if (screen === 'comp') return (done || main.empty()) && (histIdx >= 0 ? histIdx : S.hist.length) > 0;
+  if (screen === 'statEdit') return statCur.r > 0;
+  if (screen === 'tableView') return tSel > 0;
+  if (screen === 'menu') return menu && menu.pages && menu.page > 0;
+  return false;
+}
+function canDown(){
+  if (screen === 'comp') return done && histIdx >= 0 && histIdx < S.hist.length - 1;
+  if (screen === 'statEdit') return statCur.r < S.stat.length;
+  if (screen === 'tableView') return tSel < tRows.length - 1;
+  if (screen === 'menu') return menu && menu.pages && menu.page < menu.pages.length - 1;
+  return false;
+}
+
+function screenHTML(){
+  switch (screen) {
+    case 'off': return '';
+    case 'comp': {
+      const ex = edHTML(main, !done) + (done && suffix ? esc(suffix) : '');
+      return `<div class="ex">${ex}</div><div class="res">${done ? resultHTML(result) : ''}</div>`;
+    }
+    case 'calc': {
+      const v = calcSt.vars[calcSt.k];
+      return `<div class="ex">${v}?</div><div class="ex">${edHTML(calcSt.pe, true)}</div><div class="res">${decHTML(S.vars[v])}</div>`;
+    }
+    case 'error':
+      return `<div class="errbox"><div class="et">${ERRMSG[err.k]}</div><div>[AC] :Annuler</div><div>[◀][▶]:Corriger</div></div>`;
+    case 'menu': {
+      const m = menu;
+      if (m.lines) return `<div class="lines">${m.lines.map(l => `<div>${l}</div>`).join('')}</div>`;
+      const items = m.pages ? m.pages[m.page] : m.items;
+      return (m.title ? `<div class="ttl">${m.title}</div>` : '') +
+        `<div class="menu">${items.map((it, i) => `<div>${i + 1}:${it}</div>`).join('')}</div>`;
+    }
+    case 'statEdit': {
+      const fq = S.setup.freq;
+      let h = `<table class="tb"><tr><th style="width:1.5em"></th><th>X</th>${fq ? '<th>FREQ</th>' : ''}</tr>`;
+      for (let r = statCur.top; r < statCur.top + 3; r++) {
+        const row = S.stat[r];
+        const cell = (c, val) => `<td class="${r === statCur.r && c === statCur.c ? 'sel' : ''}">${val}</td>`;
+        h += `<tr><td class="rn">${r <= S.stat.length && r < 40 ? r + 1 : ''}</td>${cell(0, row ? short(row.x) : '')}${fq ? cell(1, row ? short(row.f) : '') : ''}</tr>`;
+      }
+      h += '</table>';
+      const cur = S.stat[statCur.r];
+      const foot = !cellEd.empty() ? edHTML(cellEd, true) : cur ? decHTML(statCur.c ? cur.f : cur.x) : CUR;
+      return h + `<div class="foot${cellEd.empty() ? '' : ' ex'}" style="text-align:${cellEd.empty() && cur ? 'right' : 'left'}">${foot}</div>`;
+    }
+    case 'tableF':
+      return `<div class="ex"><span class="pre">f(X)=</span>${edHTML(tableEd, true)}</div>`;
+    case 'tableAsk': {
+      const k = ['start', 'end', 'step'][askK];
+      return `<div class="ex">${['Début?', 'Fin?', 'Pas?'][askK]}</div><div class="ex">${edHTML(askEd, true)}</div><div class="res">${decHTML(S.table[k])}</div>`;
+    }
+    case 'tableView': {
+      let h = `<table class="tb"><tr><th style="width:1.5em"></th><th>X</th><th>F(X)</th></tr>`;
+      for (let r = tTop; r < tTop + 3; r++) {
+        const row = tRows[r];
+        const cell = (c, val) => `<td class="${r === tSel && c === tCol ? 'sel' : ''}">${val}</td>`;
+        h += `<tr><td class="rn">${row ? r + 1 : ''}</td>${cell(0, row ? short(row.x) : '')}${cell(1, row ? short(row.y) : '')}</tr>`;
+      }
+      const sel = tRows[tSel];
+      const v = sel ? (tCol ? sel.y : sel.x) : null;
+      return h + `</table><div class="foot">${v === null ? 'ERROR' : decHTML(v)}</div>`;
+    }
+  }
+  return '';
+}
+
+function render(){
+  $status.innerHTML = statusHTML();
+  $scr.className = 'scr' + (screen === 'off' ? ' off' : '');
+  $scr.innerHTML = screenHTML();
+  // garder le curseur visible
+  const c = $scr.querySelector('.ex .cur');
+  if (c) {
+    const ex = c.closest('.ex');
+    const er = ex.getBoundingClientRect(), cr = c.getBoundingClientRect();
+    if (cr.right > er.right - 4) ex.scrollLeft = cr.right - er.right + 14;
+  }
+  // réduire le résultat s'il déborde
+  $scr.querySelectorAll('.res, .foot').forEach(r => {
+    let fs = parseFloat(getComputedStyle(r).fontSize);
+    while (r.scrollWidth > r.clientWidth + 1 && fs > 11) { fs -= 1; r.style.fontSize = fs + 'px'; }
+  });
+}
+
+/* =========================================================
+   Actions
+   ========================================================= */
+function activeEd(){
+  switch (screen) {
+    case 'comp': return main;
+    case 'calc': return calcSt.pe;
+    case 'tableF': return tableEd;
+    case 'tableAsk': return askEd;
+    case 'statEdit': return cellEd;
+  }
+  return null;
+}
+const ANS_PREFIX = ['+','−','×','÷','²','³','⁻¹','!','%','divR','deg','rad','grad'];
+function newExpr(){ done = false; multi = null; histIdx = -1; suffix = ''; fromCalc = false; }
+
+function ins(item){
+  const ed = activeEd(); if (!ed) return;
+  if (screen === 'comp' && done) {
+    const pref = ANS_PREFIX.includes(item) || (isT(item) && item.t === 'pow');
+    newExpr(); main.clear();
+    if (pref) main.insert('Ans');
+  }
+  const it = isT(item) ? clone(item) : item;
+  if (isT(it) && it.t === 'frac' && S.setup.io === 'L') {
+    const l = ed.list(); let j = ed.i;
+    while (j > 0 && typeof l[j - 1] === 'string' && /^[0-9.]$/.test(l[j - 1])) j--;
+    if (j < ed.i) { it.s[0] = l.splice(j, ed.i - j); ed.i = j; ed.insert(it, 1); return; }
+  }
+  ed.insert(it);
+}
+
+function pushHist(root, r){
+  S.hist.push({ root: clone(root), res: r });
+  if (S.hist.length > 30) S.hist.shift();
+  histIdx = S.hist.length - 1;
+}
+function loadHist(idx){
+  const h = S.hist[idx];
+  main = new Editor(clone(h.root));
+  result = h.res; done = true; view = 'std'; mixedT = false; suffix = ''; multi = null; fromCalc = false; histIdx = idx;
+}
+
+function fail(e, back){
+  if (!(e instanceof CErr)) e = new CErr('Math');
+  err = { k: e.k, back }; screen = 'error';
+}
+
+function runStmt(k){
+  const c = mkCtx();
+  let r;
+  try { r = evalStmt(multi.stmts[k], c); } catch (e) { return fail(e, 'comp'); }
+  r.usedPi = c.usedPi; r.usedDec = c.usedDec;
+  S.ans = r.v; result = r; view = 'std'; mixedT = false; suffix = ''; done = true; multi.k = k;
+  if (k === multi.stmts.length - 1) pushHist(main.root, r);
+}
+
+function exeComp(){
+  if (main.empty()) return;
+  if (done && multi && multi.k < multi.stmts.length - 1) { runStmt(multi.k + 1); return; }
+  if (done && fromCalc) { startCalc(); return; }
+  const keepCalc = fromCalc;
+  newExpr(); fromCalc = keepCalc;
+  multi = { stmts: splitStmts(main.root), k: 0 };
+  runStmt(0);
+}
+
+function collectVars(root){
+  const out = [];
+  const targets = new Set(splitStmts(root).filter(s => s[1] === '=' && isVar(s[0])).map(s => s[0]));
+  const walk = l => l.forEach(it => {
+    if (isVar(it) && !out.includes(it)) out.push(it);
+    else if (isT(it)) it.s.forEach(walk);
+  });
+  walk(root);
+  return out.filter(v => !targets.has(v) || root.filter(x => x === v).length > 1);
+}
+function startCalc(){
+  const vs = collectVars(main.root);
+  if (!vs.length) { newExpr(); fromCalc = true; multi = { stmts: splitStmts(main.root), k: 0 }; runStmt(0); return; }
+  calcSt = { vars: vs, k: 0, pe: new Editor() };
+  screen = 'calc';
+}
+function calcKey(){
+  if (S.mode !== 'COMP') return;
+  if (screen === 'calc') { calcSt.pe.clear(); return; }
+  if (screen !== 'comp' || main.empty()) return;
+  startCalc();
+}
+function calcNext(){
+  const v = calcSt.vars[calcSt.k];
+  if (!calcSt.pe.empty()) {
+    try { S.vars[v] = evalList(calcSt.pe.root, mkCtx()); } catch (e) { return fail(e, 'calc'); }
+  }
+  calcSt.k++; calcSt.pe = new Editor();
+  if (calcSt.k >= calcSt.vars.length) {
+    screen = 'comp'; newExpr(); fromCalc = true;
+    multi = { stmts: splitStmts(main.root), k: 0 };
+    runStmt(0);
+  }
+}
+
+function valueForStore(){
+  if (done || main.empty()) { if (!done) main = new Editor(['Ans']); return S.ans; }
+  const c = mkCtx();
+  const stm = splitStmts(main.root);
+  let v; for (const s of stm) v = evalStmt(s, c).v;
+  return v;
+}
+function storeOp(label, fn){
+  if (screen !== 'comp') return;
+  let v;
+  try { v = valueForStore(); } catch (e) { return fail(e, 'comp'); }
+  fn(v);
+  S.ans = v;
+  multi = null; histIdx = -1; fromCalc = false;
+  result = { v }; done = true; view = 'std'; mixedT = false; suffix = label;
+  main.end();
+}
+function memKey(sign){ storeOp(sign > 0 ? 'M+' : 'M−', v => { S.vars.M = chk(S.vars.M + sign * v); }); }
+function varOp(p, L){
+  if (p === 'sto') storeOp('→' + L, v => { S.vars[L] = v; });
+  else if (screen === 'comp') { main = new Editor([L]); newExpr(); multi = { stmts: [[L]], k: 0 }; runStmt(0); }
+}
+function varKey(L){
+  if (screen === 'comp' || activeEd()) ins(L);
+}
+
+function dmsKey(){
+  if (screen === 'comp' && done && result && !result.t) { view = view === 'dms' ? 'std' : 'dms'; return; }
+  ins('dms');
+}
+function sdKey(){
+  if (screen === 'comp' && done && result) { view = view === 'alt' ? 'std' : 'alt'; }
+}
+function mixedKey(){
+  if (screen === 'comp' && done && result) { mixedT = !mixedT; if (view !== 'alt' && S.setup.io === 'L') view = 'alt'; if (view === 'dms') view = 'std'; }
+}
+
+function delKey(){
+  if (screen === 'comp') {
+    if (done) { newExpr(); main.end(); }
+    main.del(); return;
+  }
+  if (screen === 'statEdit' && cellEd.empty()) {
+    if (statCur.r < S.stat.length) { S.stat.splice(statCur.r, 1); fixStatCur(); }
+    return;
+  }
+  const ed = activeEd(); if (ed) ed.del();
+}
+
+function acKey(){
+  switch (screen) {
+    case 'comp': main.clear(); newExpr(); result = null; break;
+    case 'calc': screen = 'comp'; done = false; main.end(); break;
+    case 'error':
+      screen = err.back;
+      if (err.back === 'comp') { main.clear(); newExpr(); }
+      break;
+    case 'tableF': tableEd.clear(); break;
+    case 'tableAsk': case 'tableView': screen = 'tableF'; break;
+    case 'statEdit':
+      if (!cellEd.empty()) cellEd.clear();
+      else { screen = 'comp'; main.clear(); newExpr(); }
+      break;
+    case 'menu': screen = menuBack; break;
+  }
+}
+
+function exeKey(){
+  switch (screen) {
+    case 'comp': exeComp(); break;
+    case 'calc': calcNext(); break;
+    case 'tableF':
+      if (tableEd.empty()) return;
+      S.table.f = clone(tableEd.root); askK = 0; askEd = new Editor(); screen = 'tableAsk';
+      break;
+    case 'tableAsk': {
+      const k = ['start', 'end', 'step'][askK];
+      if (!askEd.empty()) { try { S.table[k] = evalList(askEd.root, mkCtx()); } catch (e) { return fail(e, 'tableAsk'); } }
+      askEd = new Editor(); askK++;
+      if (askK === 3) buildTable();
+      break;
+    }
+    case 'statEdit': commitCell(); break;
+    case 'menu': if (menu.confirm) { const f = menu.confirm; screen = menuBack; f(); } break;
+  }
+}
+
+/* ---------- STAT ---------- */
+function fixStatCur(){
+  const max = Math.min(S.stat.length, 39);
+  statCur.r = Math.max(0, Math.min(statCur.r, max));
+  if (!S.setup.freq) statCur.c = 0;
+  if (statCur.r < statCur.top) statCur.top = statCur.r;
+  if (statCur.r > statCur.top + 2) statCur.top = statCur.r - 2;
+}
+function commitCell(){
+  if (cellEd.empty()) { statCur.r++; fixStatCur(); return; }
+  let v;
+  try { v = evalList(cellEd.root, mkCtx()); } catch (e) { return fail(e, 'statEdit'); }
+  const r = statCur.r;
+  if (r >= S.stat.length) S.stat.push({ x: statCur.c ? 0 : v, f: statCur.c ? v : 1 });
+  else S.stat[r][statCur.c ? 'f' : 'x'] = v;
+  cellEd.clear(); statCur.r++; fixStatCur();
+}
+
+/* ---------- TABLE ---------- */
+function buildTable(){
+  const { start, end, step } = S.table;
+  if (step === 0 || (end - start) / step < 0) return fail(new CErr('Math'), 'tableF');
+  const count = Math.floor((end - start) / step + 1e-9) + 1;
+  if (count > 30) return fail(new CErr('Mem'), 'tableF');
+  tRows = [];
+  for (let i = 0; i < count; i++) {
+    const x = +(start + i * step).toPrecision(12);
+    const vars = Object.assign({}, S.vars, { X: x });
+    let y;
+    try { y = evalList(S.table.f, mkCtx(vars)); } catch (e) { y = null; }
+    tRows.push({ x, y });
+  }
+  tSel = 0; tTop = 0; tCol = 1; screen = 'tableView';
+}
+function fixTable(){ if (tSel < tTop) tTop = tSel; if (tSel > tTop + 2) tTop = tSel - 2; }
+
+/* ---------- menus ---------- */
+function openMenu(m){ if (screen !== 'menu') menuBack = screen; menu = Object.assign({ page: 0 }, m); screen = 'menu'; }
+function closeMenu(){ screen = menuBack; }
+
+function setMode(m){
+  S.mode = m; main.clear(); newExpr(); result = null;
+  if (m === 'COMP') screen = 'comp';
+  if (m === 'STAT') { S.stat = []; statCur = { r: 0, c: 0, top: 0 }; cellEd = new Editor(); screen = 'statEdit'; }
+  if (m === 'TABLE') { tableEd = new Editor(S.table.f ? clone(S.table.f) : []); screen = 'tableF'; }
+}
+function modeMenu(){
+  openMenu({ items: ['COMP', 'STAT', 'TABLE'], pick: (p, i) => setMode(['COMP', 'STAT', 'TABLE'][i]) });
+}
+function setupMenu(){
+  openMenu({
+    pages: [['MthIO', 'LineIO', 'Deg', 'Rad', 'Gra', 'Fix', 'Sci', 'Norm'], ['ab/c', 'd/c', 'STAT']],
+    pick: (p, i) => {
+      const st = S.setup;
+      if (p === 0) {
+        if (i === 0) st.io = 'M'; else if (i === 1) st.io = 'L';
+        else if (i <= 4) st.unit = 'DRG'[i - 2];
+        else if (i === 5) return openMenu({ lines: ['Fix 0~9?'], digit: d => { st.disp = 'fix'; st.fix = d; closeMenu(); } });
+        else if (i === 6) return openMenu({ lines: ['Sci 0~9?'], digit: d => { st.disp = 'sci'; st.sci = d || 10; closeMenu(); } });
+        else if (i === 7) return openMenu({ lines: ['Norm 1~2?'], digit: d => { if (d === 1 || d === 2) { st.disp = 'norm'; st.norm = d; closeMenu(); } } });
+      } else {
+        if (i === 0) st.frac = 'ab/c'; else if (i === 1) st.frac = 'd/c';
+        else if (i === 2) return openMenu({ title: 'Effectifs ?', items: ['ON', 'OFF'], pick: (q, j) => { st.freq = j === 0; fixStatCur(); closeMenu(); } });
+      }
+      closeMenu();
+    }
+  });
+}
+function statMenu(){
+  if (S.mode !== 'STAT' || (screen !== 'comp' && screen !== 'statEdit')) return;
+  const insTok = t => { closeMenu(); if (screen !== 'comp') { screen = 'comp'; main.clear(); newExpr(); } ins(t); };
+  openMenu({
+    items: ['Type', 'Données', 'Somme', 'Var', 'MinMax'],
+    pick: (p, i) => {
+      if (i === 0) return openMenu({ items: ['1-VAR'], pick: () => closeMenu() });
+      if (i === 1) { screen = 'statEdit'; return; }
+      const sets = [null, null, ['Σx²', 'Σx'], ['n', 'x̄', 'σx', 'sx'], ['minX', 'maxX', 'Q1', 'Med', 'Q3']];
+      const list = sets[i];
+      openMenu({ items: list, pick: (q, j) => insTok(list[j]) });
+    }
+  });
+}
+function drgMenu(){
+  if (!activeEd()) return;
+  openMenu({ items: ['°', 'ʳ', 'ᵍ'], pick: (p, i) => { closeMenu(); ins(['deg', 'rad', 'grad'][i]); } });
+}
+function clrMenu(){
+  openMenu({
+    title: 'Effacer ?', items: ['Réglages', 'Mémoire', 'Tout'],
+    pick: (p, i) => {
+      const titles = ['Réinit. réglages ?', 'Effacer mémoire ?', 'Tout réinitialiser ?'];
+      openMenu({
+        lines: [titles[i], '[=] :Oui', '[AC] :Annuler'],
+        confirm: () => {
+          if (i === 0 || i === 2) S.setup = DEF_SETUP();
+          if (i === 1 || i === 2) { S.vars = DEF_VARS(); S.ans = 0; }
+          if (i === 2) { S.hist = []; S.stat = []; S.table = { f: null, start: 1, end: 5, step: 1 }; setMode('COMP'); }
+          else if (screen === 'comp') { main.clear(); newExpr(); result = null; }
+        }
+      });
+    }
+  });
+}
+
+function menuKey(k){
+  const m = menu;
+  if (k === 'ac') { closeMenu(); return; }
+  if ((k === 'eq' || k === 'exe') && m.confirm) { exeKey(); return; }
+  if (/^[0-9]$/.test(k)) {
+    const d = +k;
+    if (m.digit) { m.digit(d); return; }
+    if (!m.pick) return;
+    const items = m.pages ? m.pages[m.page] : m.items;
+    if (d >= 1 && d <= items.length) m.pick(m.page, d - 1);
+    return;
+  }
+  if (m.pages && (k === 'up' || k === 'down')) m.page = Math.max(0, Math.min(m.pages.length - 1, m.page + (k === 'down' ? 1 : -1)));
+}
+
+/* ---------- flèches ---------- */
+function arrow(k){
+  switch (screen) {
+    case 'comp':
+      if (k === 'up' || k === 'down') {
+        if (done || main.empty()) {
+          if (k === 'up') { const idx = (histIdx >= 0 ? histIdx : S.hist.length) - 1; if (idx >= 0) loadHist(idx); }
+          else if (histIdx >= 0 && histIdx < S.hist.length - 1) loadHist(histIdx + 1);
+        } else main.vert(k === 'up' ? -1 : 1);
+        return;
+      }
+      if (done) { newExpr(); k === 'left' ? main.end() : main.start(); return; }
+      k === 'left' ? main.left() : main.right();
+      return;
+    case 'calc': case 'tableF': case 'tableAsk': {
+      const ed = activeEd();
+      if (k === 'left') ed.left(); else if (k === 'right') ed.right(); else ed.vert(k === 'up' ? -1 : 1);
+      return;
+    }
+    case 'error':
+      if (k === 'left' || k === 'right') { screen = err.back; if (screen === 'comp') { done = false; main.end(); } }
+      return;
+    case 'statEdit':
+      if (!cellEd.empty() && (k === 'left' || k === 'right')) { k === 'left' ? cellEd.left() : cellEd.right(); return; }
+      cellEd.clear();
+      if (k === 'up') statCur.r--; else if (k === 'down') statCur.r++;
+      else if (S.setup.freq) statCur.c = 1 - statCur.c;
+      fixStatCur();
+      return;
+    case 'tableView':
+      if (k === 'up') tSel = Math.max(0, tSel - 1);
+      else if (k === 'down') tSel = Math.min(tRows.length - 1, tSel + 1);
+      else tCol = 1 - tCol;
+      fixTable();
+      return;
+    case 'menu': menuKey(k); return;
+  }
+}
+
+/* =========================================================
+   Clavier
+   ========================================================= */
+const D = d => ({ n: () => ins(d) });
+const KEYS = {
+  pct:   { n: () => ins('%'),        s: () => ins(T('abs')) },
+  sq:    { n: () => ins('²'),        s: () => ins(T('sqrt')) },
+  cube:  { n: () => ins('³'),        s: () => ins(T('cbrt')) },
+  pow:   { n: () => ins(T('pow')),   s: () => ins(T('nroot')) },
+  calc:  { n: calcKey },
+  Y:     { n: () => varKey('Y'), a: () => varKey('Y'), v: 'Y' },
+  X:     { n: () => varKey('X'), a: () => varKey('X'), v: 'X' },
+  eq:    { n: () => ins('='),        s: () => ins(':') },
+  log:   { n: () => ins('log('),     s: () => ins(T('p10')) },
+  ln:    { n: () => ins('ln('),      s: () => ins(T('pe')) },
+  neg:   { n: () => ins('neg'),      a: () => varKey('A'), v: 'A' },
+  divr:  { n: () => ins('divR'),     a: () => varKey('B'), v: 'B' },
+  frac:  { n: () => ins(T('frac')),  a: () => varKey('C'), v: 'C' },
+  sin:   { n: () => ins('sin('),     s: () => ins('sin⁻¹('), a: () => varKey('D'), v: 'D' },
+  cos:   { n: () => ins('cos('),     s: () => ins('cos⁻¹('), a: () => varKey('E'), v: 'E' },
+  tan:   { n: () => ins('tan('),     s: () => ins('tan⁻¹('), a: () => varKey('F'), v: 'F' },
+  rcl:   { n: () => { if (screen === 'comp') pending = 'rcl'; }, s: () => { if (screen === 'comp') pending = 'sto'; } },
+  dms:   { n: dmsKey, s: dmsKey },
+  '(':   { n: () => ins('('),        s: () => ins('⁻¹') },
+  ')':   { n: () => ins(')'),        s: () => ins('!') },
+  sd:    { n: sdKey, s: mixedKey },
+  mplus: { n: () => memKey(1),       s: () => memKey(-1), a: () => varKey('M'), v: 'M' },
+  '0':   { n: () => ins('0'), s: () => ins('Rnd(') },
+  '1':   { n: () => ins('1'), s: statMenu },
+  '2': D('2'),
+  '3':   { n: () => ins('3'), s: () => ins(',') },
+  '4': D('4'), '5': D('5'), '6': D('6'), '7': D('7'), '8': D('8'),
+  '9':   { n: () => ins('9'), s: clrMenu },
+  '.':   { n: () => ins('.'), s: () => ins('Ran#') },
+  '+':   { n: () => ins('+'), s: () => ins('Pol(') },
+  '−':   { n: () => ins('−'), s: () => ins('Rec(') },
+  '×': D('×'), '÷': D('÷'),
+  E:     { n: () => ins(T('e10')), s: () => ins('π') },
+  Ans:   { n: () => ins('Ans'), s: drgMenu },
+  del:   { n: delKey, s: () => {} },
+  ac:    { n: acKey, s: () => { screen = 'off'; } },
+  exe:   { n: exeKey },
+  mode:  { n: modeMenu, s: setupMenu },
+  on:    { n: turnOn },
+  up: { n: () => arrow('up') }, down: { n: () => arrow('down') }, left: { n: () => arrow('left') }, right: { n: () => arrow('right') }
+};
+
+function turnOn(){
+  shift = alpha = false; pending = null;
+  main.clear(); newExpr(); result = null;
+  screen = S.mode === 'STAT' ? 'statEdit' : S.mode === 'TABLE' ? 'tableF' : 'comp';
+  if (S.mode === 'TABLE') tableEd = new Editor(S.table.f ? clone(S.table.f) : []);
+}
+
+function press(k){
+  if (screen === 'off') { if (k === 'on') turnOn(); render(); save(); return; }
+  if (k === 'shift') { shift = !shift; alpha = false; render(); return; }
+  if (k === 'alpha') { alpha = !alpha; shift = false; render(); return; }
+  const def = KEYS[k]; if (!def) return;
+  const sh = shift, al = alpha; shift = alpha = false;
+  try {
+    if (k === 'on') { turnOn(); }
+    else if (screen === 'menu' && !sh) { menuKey(k); }
+    else if (screen === 'error' && !sh) { if (k === 'ac') acKey(); else if (['left', 'right', 'up', 'down'].includes(k)) arrow(k); }
+    else if (screen === 'tableView' && !sh && !['up', 'down', 'left', 'right', 'ac', 'mode'].includes(k)) { /* rien */ }
+    else if (pending && def.v && !sh && !al) { const p = pending; pending = null; varOp(p, def.v); }
+    else {
+      if (pending && k !== 'rcl') pending = null;
+      const fn = sh ? def.s : al ? def.a : def.n;
+      if (fn) fn();
+    }
+  } catch (e) { fail(e, screen === 'error' ? 'comp' : screen); }
+  render(); save();
+}
+
+document.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => press(b.dataset.k)));
+
+const map = { '*':'×', 'x':'×', '/':'÷', '-':'−', '+':'+', ',':'.', '.':'.', '(':'(', ')':')', '^':'pow', '%':'pct',
+  'Enter':'exe', '=':'exe', 'Backspace':'del', 'Delete':'ac', 'Escape':'ac', 'Shift':'shift',
+  'ArrowLeft':'left', 'ArrowRight':'right', 'ArrowUp':'up', 'ArrowDown':'down', 'e':'E' };
+document.addEventListener('keydown', ev => {
+  if (ev.metaKey || ev.ctrlKey) return;
+  const k = /^[0-9]$/.test(ev.key) ? ev.key : map[ev.key];
+  if (!k) return;
+  ev.preventDefault();
+  press(k);
+  const b = document.querySelector(`[data-k="${CSS.escape(k)}"]`);
+  if (b) { b.classList.add('down'); setTimeout(() => b.classList.remove('down'), 90); }
+});
+
+/* =========================================================
+   Démarrage
+   ========================================================= */
+turnOn();
+if (fresh) {
+  // exemple au premier lancement : 1/2 + 1/3
+  main = new Editor([{ t: 'frac', s: [['1'], ['2']] }, '+', { t: 'frac', s: [['1'], ['3']] }]);
+  exeComp();
+}
+render();
+window.__calc = { press, get lcd(){ return $scr.innerText; }, get S(){ return S; } };
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
