@@ -136,7 +136,7 @@ body{position:fixed; inset:0; height:auto; box-sizing:border-box;
 
 <div class="calc">
   <div class="brand"><span class="name">CALCULETTE</span><span class="model">fx-FB</span></div>
-  <div class="sub">Collège 2D <span style="font-size:10px;opacity:.55;font-weight:500">v4</span></div>
+  <div class="sub">Collège 2D <span style="font-size:10px;opacity:.55;font-weight:500">v5</span></div>
 
   <div class="lcd" aria-live="polite">
     <div class="status" id="status"></div>
@@ -1352,23 +1352,43 @@ function press(k){
   render(); save();
 }
 
-// Réaction immédiate au toucher (pointerdown) : chaque appui compte, même très rapide ou à deux doigts.
-document.querySelectorAll('[data-k]').forEach(b => {
-  const up = () => b.classList.remove('down');
-  b.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    e.preventDefault();
-    b.classList.add('down');
-    press(b.dataset.k);
-  });
-  b.addEventListener('pointerup', up);
-  b.addEventListener('pointercancel', up);
-  b.addEventListener('pointerleave', up);
+// Réaction immédiate au toucher. Tout l'espace sous l'écran est découpé en zones :
+// un appui entre deux touches (ou dans la marge) active la touche la plus proche.
+// L'aspect des touches ne change pas.
+const $lcd = document.querySelector('.lcd');
+const btns = Array.from(document.querySelectorAll('.keys [data-k]'));
+const held = new Map();
+function nearestKey(x, y){
+  let best = null, bd = Infinity;
+  for (const b of btns) {
+    const r = b.getBoundingClientRect();
+    const dx = Math.max(r.left - x, 0, x - r.right);
+    const dy = Math.max(r.top - y, 0, y - r.bottom);
+    const d = dx * dx + dy * dy;
+    if (d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+const inKeyArea = y => y > $lcd.getBoundingClientRect().bottom + 4;
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (!inKeyArea(e.clientY)) return;
+  const b = nearestKey(e.clientX, e.clientY);
+  if (!b) return;
+  e.preventDefault();
+  b.classList.add('down');
+  held.set(e.pointerId, b);
+  press(b.dataset.k);
+});
+const release = e => { const b = held.get(e.pointerId); if (b) { b.classList.remove('down'); held.delete(e.pointerId); } };
+document.addEventListener('pointerup', release);
+document.addEventListener('pointercancel', release);
+btns.forEach(b => {
   // clavier (Entrée / Espace sur une touche sélectionnée) : seulement les clics sans pointeur
   b.addEventListener('click', e => { if (e.detail === 0) press(b.dataset.k); });
-  b.addEventListener('contextmenu', e => e.preventDefault());
 });
-document.addEventListener('touchstart', e => { if (e.target.closest && e.target.closest('[data-k]')) e.preventDefault(); }, { passive: false });
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('touchstart', e => { const t = e.touches[0]; if (t && inKeyArea(t.clientY)) e.preventDefault(); }, { passive: false });
 document.addEventListener('dblclick', e => e.preventDefault());
 
 const map = { '*':'×', 'x':'×', '/':'÷', '-':'−', '+':'+', ',':'.', '.':'.', '(':'(', ')':')', '^':'pow', '%':'pct',
